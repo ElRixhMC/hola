@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title> Sorpresa</title>
+  <meta name="description" content="cuenta regresiva " />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg: radial-gradient(1200px 800px at 20% 10%, #2b2f77 0%, transparent 60%),
+            radial-gradient(1000px 800px at 80% 20%, #7a2b77 0%, transparent 60%),
+            linear-gradient(180deg, #0b1020, #0b1018);
+      --glass: rgba(255,255,255,.08);
+      --border: rgba(255,255,255,.15);
+      --text: #eaf2ff;
+      --muted: #a6b0c5;
+      --accent: #b2f5ea;
+      --ok: #6ee7b7;
+      --bad: #fda4af;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:'Outfit', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:var(--text);
+      background: var(--bg) fixed; overflow-x:hidden;
+    }
+    .wrap{min-height:100%; display:grid; place-items:center; padding:24px}
+    .card{
+      width:min(680px, 94vw); background:var(--glass); border:1px solid var(--border);
+      backdrop-filter: blur(14px); border-radius:24px; padding:28px; box-shadow:0 20px 60px rgba(0,0,0,.35)
+    }
+    h1{margin:0 0 6px; font-weight:700; letter-spacing:.3px}
+    .sub{opacity:.8; margin:0 0 18px; font-weight:300}
+    .field{display:flex; gap:10px; margin-top:14px}
+    input[type=password], input[type=text]{
+      flex:1; padding:14px 16px; border-radius:16px; border:1px solid var(--border); background:rgba(255,255,255,.06);
+      color:var(--text); outline:none; font-size:16px; transition:.2s border-color, .2s background;
+    }
+    input::placeholder{color:#9fb0c7aa}
+    button{
+      border:1px solid var(--border); background:rgba(255,255,255,.1); color:var(--text); padding:14px 18px; border-radius:16px; cursor:pointer;
+      font-weight:600; letter-spacing:.3px; transition:.2s transform, .2s background;
+    }
+    button:hover{transform:translateY(-1px); background:rgba(255,255,255,.16)}
+    .hint{margin-top:10px; color:var(--muted); font-size:14px}
+    .error{color:var(--bad)}
+
+    .countdown{display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:12px; margin-top:16px}
+    .unit{background:rgba(255,255,255,.07); border:1px solid var(--border); border-radius:18px; padding:16px; text-align:center}
+    .num{font-size:40px; font-weight:700; line-height:1; letter-spacing:1px}
+    .lbl{opacity:.8; font-size:13px; margin-top:6px}
+
+    .divider{height:1px; background:var(--border); margin:20px 0}
+    .footer{display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap}
+    .tag{font-size:13px; color:var(--muted)}
+    .badge{display:inline-block; border:1px solid var(--border); background:rgba(255,255,255,.08); padding:6px 10px; border-radius:999px; font-size:13px; color:var(--accent)}
+    .hidden{display:none}
+    canvas#fx{position:fixed; inset:0; pointer-events:none}
+  </style>
+</head>
+<body>
+  <canvas id="fx"></canvas>
+  <div class="wrap">
+    <section class="card" id="gate">
+      <h1> Hola, amor</h1>
+      <p class="sub">Escribe la contraseña</p>
+      <div class="field">
+        <input id="codeInput" type="password" inputmode="text" autocomplete="one-time-code" placeholder="Escribe la clave…" />
+        <button id="enterBtn">Entrar</button>
+      </div>
+      <div id="msg" class="hint">  </div>
+      <div class="divider"></div>
+      <div class="footer">
+        <span class="tag"> 😜😜😜😜</span>
+        <span class="badge" id="targetBadge"></span>
+      </div>
+    </section>
+
+    <section class="card hidden" id="timer">
+      <h1>Cuenta regresiva</h1>
+      <p class="sub">Revisa esta pagina el <strong id="targetHuman"></strong>. Nos vemos aquí ese día. </p>
+      <div class="countdown" role="timer" aria-live="polite">
+        <div class="unit"><div class="num" id="d">00</div><div class="lbl">días</div></div>
+        <div class="unit"><div class="num" id="h">00</div><div class="lbl">horas</div></div>
+        <div class="unit"><div class="num" id="m">00</div><div class="lbl">min</div></div>
+        <div class="unit"><div class="num" id="s">00</div><div class="lbl">seg</div></div>
+      </div>
+      <div class="divider"></div>
+      <p class="hint">Mientras tanto puedes volver cuando quieras a ver cuánto falta </p>
+    </section>
+
+    <section class="card hidden" id="reveal">
+      <h1>:)</h1>
+      <p class="sub">Gracias por esperarme. Aquí está tu regalo preparado con todo mi amor.</p>
+      <p>
+        <a id="downloadLink" class="button" href="regalo.pdf" download>
+           Descargar 
+        </a>
+      </p>
+      <p class="hint">Si no inicia, toca con botón derecho ➜ “Guardar enlace como…”.</p>
+    </section>
+  </div>
+
+  <script>
+    const CHANGE_CODE = 'karisitabonita'; // ← clave personalizada
+    const TARGET_ISO  = '2025-10-22T00:00:00-06:00';
+    const PDF_PATH    = 'regalo.pdf';
+    const ACCESS_KEY = 'sorpresa:acceso-ok';
+
+    const gate = document.getElementById('gate');
+    const timer = document.getElementById('timer');
+    const reveal = document.getElementById('reveal');
+    const badge = document.getElementById('targetBadge');
+    const human = document.getElementById('targetHuman');
+    const inp = document.getElementById('codeInput');
+    const btn = document.getElementById('enterBtn');
+    const msg = document.getElementById('msg');
+    const d = document.getElementById('d');
+    const h = document.getElementById('h');
+    const m = document.getElementById('m');
+    const s = document.getElementById('s');
+    const link = document.getElementById('downloadLink');
+
+    const target = new Date(TARGET_ISO);
+    const dateFmt = new Intl.DateTimeFormat('es-SV', { dateStyle: 'full', timeStyle: 'short' });
+    const dayFmt  = new Intl.DateTimeFormat('es-SV', { dateStyle: 'long' });
+    badge.textContent = `Destino: ${dateFmt.format(target)}`;
+    human.textContent = dayFmt.format(target);
+    link.href = PDF_PATH;
+
+    inp.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ btn.click(); }});
+    function normalize(x){ return (x||'').trim().toLowerCase(); }
+    function checkCode(x){ return normalize(x) === normalize(CHANGE_CODE); }
+
+    btn.addEventListener('click', () => {
+      if (checkCode(inp.value)) {
+        localStorage.setItem(ACCESS_KEY, '1');
+        showTimer();
+      } else {
+        msg.textContent = 'Esa no es la clave 😒';
+        msg.classList.add('error');
+        setTimeout(()=>{ msg.classList.remove('error'); msg.textContent='😜😜😜😜'; }, 1800);
+      }
+    });
+
+    if (localStorage.getItem(ACCESS_KEY) === '1') { showTimer(); }
+
+    let tickHandle = null;
+    function startCountdown(){
+      function tick(){
+        const now = new Date();
+        const diff = target - now;
+        if (diff <= 0) {
+          d.textContent = h.textContent = m.textContent = s.textContent = '00';
+          clearInterval(tickHandle);
+          showReveal();
+          return;
+        }
+        const sec = Math.floor(diff/1000);
+        const days = Math.floor(sec / 86400);
+        const hours = Math.floor((sec % 86400) / 3600);
+        const mins = Math.floor((sec % 3600) / 60);
+        const secs = sec % 60;
+        d.textContent = String(days).padStart(2,'0');
+        h.textContent = String(hours).padStart(2,'0');
+        m.textContent = String(mins).padStart(2,'0');
+        s.textContent = String(secs).padStart(2,'0');
+      }
+      tick();
+      tickHandle = setInterval(tick, 1000);
+    }
+
+    function showTimer(){
+      gate.classList.add('hidden');
+      reveal.classList.add('hidden');
+      timer.classList.remove('hidden');
+      if (new Date() >= target) { showReveal(); return; }
+      startCountdown();
+    }
+    function showReveal(){
+      gate.classList.add('hidden');
+      timer.classList.add('hidden');
+      reveal.classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
