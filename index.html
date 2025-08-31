@@ -127,7 +127,7 @@
     const target = new Date(TARGET_ISO);
     const dateFmt = new Intl.DateTimeFormat('es-SV', { dateStyle: 'full', timeStyle: 'short' });
     const dayFmt  = new Intl.DateTimeFormat('es-SV', { dateStyle: 'long' });
-    badge.textContent = `Destino: ${dateFmt.format(target)}`;
+    badge.textContent = `Fecha: ${dateFmt.format(target)}`;
     human.textContent = dayFmt.format(target);
     link.href = PDF_PATH;
 
@@ -187,4 +187,5 @@
     }
   </script>
 </body>
+
 </html>
